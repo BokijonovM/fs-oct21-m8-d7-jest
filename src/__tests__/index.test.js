@@ -61,13 +61,13 @@ describe("Testing the endpoints", () => {
   });
 
   it("should test that the test endpoint returns a id", async () => {
-    const response = await client.get("/test/:id");
-    expect(response.status).toBe(404);
+    const response = await client.get(`/products/${createdProductId}`);
+    expect(response.status).toBe(200);
   });
 
   it("should test that the test endpoint returns 204", async () => {
-    const response = await client.delete("/test/:id");
-    expect(response.status).toBe(404);
+    const response = await client.delete(`/products/${createdProductId}`);
+    expect(response.status).toBe(204);
   });
 
   afterAll(async () => {
