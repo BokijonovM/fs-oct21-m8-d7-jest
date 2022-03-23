@@ -7,20 +7,6 @@ productsRouter
     const products = await Product.find({});
     res.status(200).send(products);
   })
-  .get("/:id", async (req, res, next) => {
-    try {
-      const proId = req.params.id;
-
-      const product = await Product.findById(proId);
-      if (product) {
-        res.send(product);
-      } else {
-        res.status(404).send(`Product with id ${proId} not found!`);
-      }
-    } catch (error) {
-      next(error);
-    }
-  })
   .post("/", async (req, res) => {
     try {
       const product = new Product(req.body);
@@ -30,12 +16,43 @@ productsRouter
       res.status(400).send(error);
     }
   })
+  .get("/:id", async (req, res, next) => {
+    try {
+      const proId = req.params.id;
+
+      const product = await Product.findById(proId);
+      if (product) {
+        res.send(product);
+      } else {
+        res.status(404);
+      }
+    } catch (error) {
+      next(error);
+    }
+  })
+  .put("/:id", async (req, res, next) => {
+    try {
+      const accId = req.params.id;
+      const updatedAcc = await Product.findByIdAndUpdate(accId, req.body, {
+        new: true,
+      });
+      if (updatedAcc) {
+        res.send(updatedAcc);
+        // res.send({message : "Updated"});
+      } else {
+        res.status(404).send(`Product with id ${accId} not found!`);
+      }
+    } catch (error) {
+      next(error);
+    }
+  })
   .delete("/:id", async (req, res, next) => {
     try {
       const accId = req.params.id;
       const deletedAcc = await Product.findByIdAndDelete(accId);
       if (deletedAcc) {
-        res.status(204).send(`Product with id ${accId} deleted!`);
+        res.status(204).send({ message: "Deleted" });
+        // res.send({ message: "Deleted" });
       } else {
         res.status(404).send(`Product with id ${accId} not found!`);
       }

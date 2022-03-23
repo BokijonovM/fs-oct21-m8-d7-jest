@@ -8,15 +8,6 @@ console.log(process.env.MONGO_URL);
 
 const client = supertest(app);
 
-describe("Testing the testing environment", () => {
-  test("should check that true is true", () => {
-    expect(true).toBe(true);
-  });
-  test("should check that 1 + 1 is 2", () => {
-    expect(1 + 1).toBe(2);
-  });
-});
-
 describe("Testing the endpoints", () => {
   beforeAll(async () => {
     console.log("Before all tests...");
@@ -65,9 +56,50 @@ describe("Testing the endpoints", () => {
     expect(response.status).toBe(200);
   });
 
+  it("should test that the test endpoint returns a id", async () => {
+    const response = await client.get(`/products/234nc8x823eh38dfcdx9283`);
+    expect(response.status).toBe(500);
+  });
+
+  const UpdatedProduct = {
+    name: "Test products",
+    price: 11,
+  };
+
+  it("should test that the test endpoint returns a id", async () => {
+    const response = await client
+      .put(`/products/${createdProductId}`)
+      .send(validProduct);
+    expect(response.status).toBe(200);
+  });
+
+  it("should test that the test endpoint returns a id", async () => {
+    const response = await client
+      .put(`/products/239848010v1bfdnr8c3`)
+      .send(UpdatedProduct);
+    expect(response.status).toBe(500);
+  });
+
+  it("should test that the test endpoint returns a id", async () => {
+    const response = await client
+      .put(`/products/${createdProductId}`)
+      .send(UpdatedProduct);
+    if (response.status === 200) {
+      expect(response.status).toBe(200);
+    } else {
+      expect(response.status).toBe(404);
+    }
+  });
+
   it("should test that the test endpoint returns 204", async () => {
-    const response = await client.delete(`/products/${createdProductId}`);
-    expect(response.status).toBe(204);
+    const response = await client
+      .delete(`/products/${createdProductId}`)
+      .send(validProduct);
+    if (response) {
+      expect(response.status).toBe(204);
+    } else {
+      expect(response.status).toBe(404);
+    }
   });
 
   afterAll(async () => {
