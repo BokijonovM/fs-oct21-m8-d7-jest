@@ -94,7 +94,6 @@ describe("Testing the app endpoints", () => {
 
   it("should check that the DELETE /products/:id returns a 404 without a valid id", async () => {
     const response = await request.delete(`/products/999999999999999999999999`);
-
     expect(response.status).toBe(404);
   });
 
