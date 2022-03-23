@@ -1,111 +1,113 @@
-import supertest from "supertest";
 import { app } from "../app.js";
-import dotenv from "dotenv";
+import supertest from "supertest";
 import mongoose from "mongoose";
+import dotenv from "dotenv";
+
 dotenv.config();
 
-console.log(process.env.MONGO_URL);
+const request = supertest(app);
 
-const client = supertest(app);
+describe("Testing the app endpoints", () => {
+  beforeAll((done) => {
+    console.log("This gets run before all tests in this suite");
 
-describe("Testing the endpoints", () => {
-  beforeAll(async () => {
-    console.log("Before all tests...");
-    await mongoose.connect(process.env.MONGO_URL);
-
-    console.log("Connected to Mongo");
+    mongoose.connect(process.env.MONGO_URL).then(() => {
+      console.log("Connected to the test database");
+      done();
+    });
   });
 
-  it("should test that the test endpoint returns a success message", async () => {
-    const response = await client.get("/test");
+  it("should check that the GET /test endpoint returns a success message", async () => {
+    const response = await request.get("/test");
+
+    expect(response.status).toBe(200);
     expect(response.body.message).toBe("Test success");
   });
 
   const validProduct = {
-    name: "Test product",
-    price: 900,
+    name: "Test Product",
+    price: 200,
   };
 
-  it("should test that the POST /products endpoint returns the newly created product", async () => {
-    const response = await client.post("/products").send(validProduct);
+  let _id = null;
+
+  it("should check that the POST /products endpoint creates a new product", async () => {
+    const response = await request.post("/products").send(validProduct);
+
     expect(response.status).toBe(201);
     expect(response.body._id).toBeDefined();
+    expect(response.body.name).toBeDefined();
+    expect(response.body.price).toBeDefined();
 
-    console.log(response.body);
+    _id = response.body._id;
   });
 
-  const invalidData = {
-    whatever: "something",
+  it("should check that the GET /products endpoint returns a list of products", async () => {
+    const response = await request.get("/products");
+
+    expect(response.status).toBe(200);
+    expect(response.body.length).toBeGreaterThan(0);
+  });
+
+  it("should check that the GET /products/:id returns a valid product with a valid id", async () => {
+    const response = await request.get(`/products/${_id}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body._id).toBe(_id);
+    expect(response.body.name).toBe(validProduct.name);
+    expect(response.body.price).toBe(validProduct.price);
+  });
+
+  it("should check that the GET /products/:id returns a 404 without a valid id", async () => {
+    const response = await request.get(`/products/999999999999999999999999`);
+
+    expect(response.status).toBe(404);
+  });
+
+  const validUpdate = {
+    name: "Test Product Updated",
   };
 
-  it("should test that POST /products with INVALID data returns 400", async () => {
-    const response = await client.post("/products").send(invalidData);
-    expect(response.status).toBe(400);
-  });
+  it("should check that a valid PUT /products/:id update request gets executed correctly", async () => {
+    const response = await request.put(`/products/${_id}`).send(validUpdate);
 
-  let createdProductId;
-  it("should test that the GET /products endpoint returns the product we just created", async () => {
-    const response = await client.get("/products");
     expect(response.status).toBe(200);
-
-    createdProductId = response.body[0]._id;
+    expect(response.body.name).toBe(validUpdate.name);
+    expect(typeof response.body.name).toBe("string");
   });
 
-  it("should test that the test endpoint returns a id", async () => {
-    const response = await client.get(`/products/${createdProductId}`);
-    expect(response.status).toBe(200);
+  it("should check that a valid PUT /products/:id update request gets 404 on an invalid ID", async () => {
+    const response = await request
+      .put(`/products/444444444444444444444444`)
+      .send(validUpdate);
+
+    expect(response.status).toBe(404);
   });
 
-  it("should test that the test endpoint returns a id", async () => {
-    const response = await client.get(`/products/234nc8x823eh38dfcdx9283`);
-    expect(response.status).toBe(500);
+  it("should check that the DELETE /products/:id returns a valid product with a valid id", async () => {
+    const response = await request.delete(`/products/${_id}`);
+    expect(response.status).toBe(204);
+
+    const deleteProductResponse = await request.get(`/products/${_id}`);
+    expect(deleteProductResponse.status).toBe(404);
   });
 
-  const UpdatedProduct = {
-    name: "Test products",
-    price: 11,
-  };
+  it("should check that the DELETE /products/:id returns a 404 without a valid id", async () => {
+    const response = await request.delete(`/products/999999999999999999999999`);
 
-  it("should test that the test endpoint returns a id", async () => {
-    const response = await client
-      .put(`/products/${createdProductId}`)
-      .send(validProduct);
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(404);
   });
 
-  it("should test that the test endpoint returns a id", async () => {
-    const response = await client
-      .put(`/products/239848010v1bfdnr8c3`)
-      .send(UpdatedProduct);
-    expect(response.status).toBe(500);
+  afterAll((done) => {
+    mongoose.connection
+      .dropDatabase()
+      .then(() => {
+        return mongoose.connection.close();
+      })
+      .then(() => {
+        done();
+      });
   });
 
-  it("should test that the test endpoint returns a id", async () => {
-    const response = await client
-      .put(`/products/${createdProductId}`)
-      .send(UpdatedProduct);
-    if (response.status === 200) {
-      expect(response.status).toBe(200);
-    } else {
-      expect(response.status).toBe(404);
-    }
-  });
-
-  it("should test that the test endpoint returns 204", async () => {
-    const response = await client
-      .delete(`/products/${createdProductId}`)
-      .send(validProduct);
-    if (response) {
-      expect(response.status).toBe(204);
-    } else {
-      expect(response.status).toBe(404);
-    }
-  });
-
-  afterAll(async () => {
-    await mongoose.connection.dropDatabase();
-    await mongoose.connection.close();
-
-    console.log("Closed Mongo connection.");
-  });
+  // it("should test that the GET /products endpoint returns a list of products", async () => {})
 });

@@ -1,63 +1,47 @@
 import express from "express";
-import Product from "./model.js";
+import { ProductModel } from "./model.js";
+
 const productsRouter = express.Router();
 
 productsRouter
   .get("/", async (req, res) => {
-    const products = await Product.find({});
-    res.status(200).send(products);
+    const products = await ProductModel.find({});
+    res.send(products);
+  })
+  .get("/:id", async (req, res) => {
+    const product = await ProductModel.findById(req.params.id);
+
+    console.log(product);
+    if (!product) {
+      res.status(404).send();
+    } else {
+      res.send(product);
+    }
   })
   .post("/", async (req, res) => {
-    try {
-      const product = new Product(req.body);
-      await product.save();
-      res.status(201).send(product);
-    } catch (error) {
-      res.status(400).send(error);
-    }
+    const product = new ProductModel(req.body);
+    await product.save();
+    res.status(201).send(product);
   })
-  .get("/:id", async (req, res, next) => {
-    try {
-      const proId = req.params.id;
+  .put("/:id", async (req, res) => {
+    const product = await ProductModel.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
 
-      const product = await Product.findById(proId);
-      if (product) {
-        res.send(product);
-      } else {
-        res.status(404);
-      }
-    } catch (error) {
-      next(error);
+    if (!product) {
+      res.status(404).send();
+    } else {
+      res.send(product);
     }
   })
-  .put("/:id", async (req, res, next) => {
-    try {
-      const accId = req.params.id;
-      const updatedAcc = await Product.findByIdAndUpdate(accId, req.body, {
-        new: true,
-      });
-      if (updatedAcc) {
-        res.send(updatedAcc);
-        // res.send({message : "Updated"});
-      } else {
-        res.status(404).send(`Product with id ${accId} not found!`);
-      }
-    } catch (error) {
-      next(error);
-    }
-  })
-  .delete("/:id", async (req, res, next) => {
-    try {
-      const accId = req.params.id;
-      const deletedAcc = await Product.findByIdAndDelete(accId);
-      if (deletedAcc) {
-        res.status(204).send({ message: "Deleted" });
-        // res.send({ message: "Deleted" });
-      } else {
-        res.status(404).send(`Product with id ${accId} not found!`);
-      }
-    } catch (error) {
-      next(error);
+  .delete("/:id", async (req, res) => {
+    const product = await ProductModel.findByIdAndDelete(req.params.id);
+    if (!product) {
+      res.status(404).send();
+    } else {
+      res.status(204).send();
     }
   });
 
